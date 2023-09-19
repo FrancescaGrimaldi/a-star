@@ -1,7 +1,7 @@
 from Map import Map_Obj
 from queue import PriorityQueue
 
-def heuristic(a, b):
+def heuristic(a: list[int, int], b: list[int, int]):
 
     """
     Calculates the heuristic for the A* algorithm: the Manhattan distance between two points.
@@ -21,7 +21,7 @@ def heuristic(a, b):
 
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
-def alg(start, goal, map):
+def alg(start: list[int, int], goal: list[int, int], map: Map_Obj):
 
     """
     Implementation of the A* algorithm for finding the shortest path between two points.
@@ -67,7 +67,7 @@ def alg(start, goal, map):
     
     return came_from, cost_so_far
 
-def neighbors(map, pos):
+def neighbors(map: Map_Obj, pos: list[int, int]):
 
     """
     Finds the neighbors of a given node.
@@ -101,7 +101,7 @@ def neighbors(map, pos):
 
     return neighbors
 
-def find_path(map):
+def find_path(map: Map_Obj):
 
     """
     Finds the shortest path between the start and goal positions of the given map,
@@ -120,13 +120,13 @@ def find_path(map):
     came_from, cost_so_far = alg(start, goal, map)  # calling the A* algorithm
 
     node = tuple(goal)      # starting from the goal node and going backwards to the start
-    while came_from[tuple(node)] != tuple(start):
-        map.set_cell_value(came_from[tuple(node)], ";")
-        node = came_from[tuple(node)]
+    while came_from[node] != tuple(start):
+        map.set_cell_value(came_from[node], " - ")
+        node = came_from[node]
     
     map.show_map()
-    #print('COST OF GOAL')
-    #print(cost_so_far[tuple(goal)])
+    print('COST OF GOAL')
+    print(cost_so_far[tuple(goal)])
 
 def main():
     map = Map_Obj(4)
