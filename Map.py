@@ -354,4 +354,4 @@ class Map_Obj():
         # Show image
         image.show()
         
-        # image.save("path4.png")
+        # image.save("path5.png")

@@ -173,7 +173,7 @@ def find_path(map: Map_Obj, task: int):
 def main():
     task = 5
     map = Map_Obj(task)
-    map.show_map()
+    # map.show_map()
     find_path(map, task)
     map.show_map()
 
