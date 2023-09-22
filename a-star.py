@@ -1,17 +1,19 @@
 from Map import Map_Obj
 from queue import PriorityQueue
+import math as m
 
-def heuristic(a: list[int, int], b: list[int, int]):
+# This is the heuristic used in our implementation
+def manhattan_distance(node: list[int, int], end: list[int, int]):
 
     """
-    Calculates the heuristic for the A* algorithm: the Manhattan distance between two points.
+    Calculates the Manhattan distance between two points.
 
     Parameters
     ----------
-    a : list[int, int]
-        The coordinates of the first point
-    b : list[int, int]
-        The coordinates of the second point
+    node : list[int, int]
+        The coordinates of a node in the board
+    end : list[int, int]
+        The coordinates of the goal node
 
     Returns
     -------
@@ -19,7 +21,27 @@ def heuristic(a: list[int, int], b: list[int, int]):
         The Manhattan distance between the given points
     """
 
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+    return abs(node[0] - end[0]) + abs(node[1] - end[1])
+
+def euclidian_distance(node: list[int, int], end: list[int, int]):
+
+    """
+    Calculates the Euclidian distance between two points.
+
+    Parameters
+    ----------
+    node : list[int, int]
+        The coordinates of a node in the board
+    end : list[int, int]
+        The coordinates of the goal node
+
+    Returns
+    -------
+    int
+        The Euclidian distance between the given points
+    """
+
+    return m.sqrt(m.pow(end.position[0] - node.position[0], 2) + m.pow(end.position[1] - node.position[1], 2))
 
 def neighbors(map: Map_Obj, pos: list[int, int]):
 
@@ -42,7 +64,8 @@ def neighbors(map: Map_Obj, pos: list[int, int]):
     neighbors = []
     for new_position in [(0, -1), (0, 1), (-1, 0), (1, 0)]:    # north, south, east and west neighbors of the current node
         string_map = map.get_maps()[1]
-
+        
+        # computing the x and y coordinates of the next node
         next_node = (pos[0] + new_position[0], pos[1] + new_position[1])
         
         # checking if the next node is out of bounds
@@ -55,7 +78,7 @@ def neighbors(map: Map_Obj, pos: list[int, int]):
 
     return neighbors
 
-def alg(start: list[int, int], goal: list[int, int], map: Map_Obj):
+def alg(start: list[int, int], goal: list[int, int], map: Map_Obj, task: int):
 
     """
     Implementation of the A* algorithm for finding the shortest path between two points.
@@ -68,6 +91,8 @@ def alg(start: list[int, int], goal: list[int, int], map: Map_Obj):
         The coordinates of the goal point
     map : Map_Obj
         The map object representing the map
+    task : int
+        The number of the task to be executed
 
     Returns
     -------
@@ -87,30 +112,36 @@ def alg(start: list[int, int], goal: list[int, int], map: Map_Obj):
     Every time we pop a node from the frontier, we are guaranteed that it is the one with the lowest cost to get to it.
     """
     frontier = PriorityQueue()
-    frontier.put(start, heuristic(goal, start))    # pushing the start node to the frontier
+    frontier.put((manhattan_distance(goal, start), start), 0)    # pushing the start node to the frontier
 
     while not frontier.empty():    # searching until there are no more nodes to explore
-        current_node = frontier.get()    # popping the node with the lowest cost to reach it
+        
+        # if the task is 5, the goal position changes
+        if (task == 5):
+            goal = tuple(map.tick())
+
+        current_node = tuple(frontier.get()[1])    # popping the node with the lowest cost to reach it
 
         # if the current node is the goal, we have found the shortest path and we can stop our search
         if current_node == goal:
             break
 
-        for next_node in neighbors(map, current_node):    # exploring the neighbors of the current node
+        for next_node in neighbors(map, current_node):    # checks all the neighbors of the current node
 
             # cost to get to the node = cost to get to the parent + cost of the cell itself
             new_cost = cost_to_node[tuple(current_node)] + map.get_cell_value(next_node)
             
-            # if the node has not been visited yet or we have found a better path to it, we update its cost and parent and add it to the frontier with its priority
+            # verifies that the current node hasn't already been considered or that it has a lower cost  
             if tuple(next_node) not in cost_to_node or new_cost < cost_to_node[tuple(next_node)]:
+                # in this case, it add a new entry in cost_to_node, adds the node in the frontier, and updates its precessor
                 cost_to_node[tuple(next_node)] = new_cost
-                priority = new_cost + heuristic(goal, next_node)    # priority = cost to get to the node + heuristic
-                frontier.put(next_node, priority)
-                came_from[tuple(next_node)] = tuple(current_node)
+                priority = new_cost + manhattan_distance(goal, next_node)    # priority = cost to get to the node + heuristic
+                frontier.put((priority, next_node))
+                came_from[tuple(next_node)] = current_node
     
-    return came_from, cost_to_node
+    return came_from, cost_to_node, goal
 
-def find_path(map: Map_Obj):
+def find_path(map: Map_Obj, task: int):
 
     """
     Finds the shortest path between the start and goal positions of the given map,
@@ -120,26 +151,31 @@ def find_path(map: Map_Obj):
     ----------
     map : Map_Obj
         The map object representing the map
+    task: int
+        The number of the task to be executed
     """
 
     # getting the start and goal positions
     start = map.get_start_pos()
     goal = map.get_goal_pos()
 
-    came_from, cost_to_node = alg(start, goal, map)    # calling the A* algorithm
+    came_from, cost_to_node, goal = alg(start, goal, map, task)    # calling the A* algorithm
 
     # drawing the path starting from the goal node and going backwards to the start
     current_node = tuple(goal)
     while came_from[current_node] != tuple(start):
         map.set_cell_value(came_from[current_node], " - ")    # colouring the path
-        current_node = came_from[current_node]    # going to the parent node
+        current_node = came_from[current_node]    # going to the predecessor of the current node
     
-    map.show_map()
     print('Cost to reach the goal:')
     print(cost_to_node[tuple(goal)])
 
+def main():
+    task = 5
+    map = Map_Obj(task)
+    map.show_map()
+    find_path(map, task)
+    map.show_map()
 
 if __name__ == "__main__":
-    map = Map_Obj(4)
-    map.show_map()
-    find_path(map)
+    main()
